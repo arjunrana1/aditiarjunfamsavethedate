@@ -29,7 +29,7 @@
       /* ✏️ TV Word font size (SAVE, THE, DATE, 11.25.26) */
       --fs-details: 11px;
       --fs-married: clamp(40px, 10.5vw, 54px);
-      --fs-formal: 19px;
+      --fs-formal: 24px;
       --fs-coming: 13px;
       --fs-count: 36px;
       --fs-contact: 16px;
@@ -458,21 +458,21 @@
       justify-content: center;
       text-align: center;
       font-family: var(--type);
-      font-size: var(--fs-details);
-      letter-spacing: .22em;
+      font-size: calc(var(--fs-details) * 1.3);
+      letter-spacing: .25em;
       text-indent: .22em;
       text-transform: uppercase;
       line-height: normal;
-      color: rgba(246, 234, 214, 0.88);
-      background: rgba(255, 255, 255, 0.05);
-      padding: 12px 20px;
-      border: 1px solid rgba(202, 162, 90, 0.45);
+      color: #fff;
+      background: rgba(255, 255, 255, 0.15);
+      padding: 14px 24px;
+      border: 2px solid var(--gold);
       border-radius: 20px;
-      box-shadow: none !important;
+      box-shadow: 0 0 12px var(--gold);
       opacity: 0;
       pointer-events: none;
       transform: translateY(8px);
-      transition: opacity 1s ease, transform .25s ease, border-color .25s ease, background .25s ease, color .25s ease;
+      transition: opacity 0.8s ease, transform 0.25s ease, border-color 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
       cursor: pointer;
     }
 
@@ -749,7 +749,7 @@
     }
 
     .formal {
-      margin-top: 20px;
+      margin-top: 11px;
       font-style: italic;
       font-size: var(--fs-formal);
       line-height: 1.7;
@@ -762,6 +762,32 @@
     .formal.in {
       opacity: 1;
       transform: none
+    }
+
+    .formal-arrow {
+      margin-top: 14px;
+      font-size: 18px;
+      color: var(--pink);
+      opacity: 0;
+      transition: opacity 1s ease .6s;
+      animation: none;
+    }
+
+    .formal-arrow.in {
+      opacity: .7;
+      animation: bounceArrow 2s ease-in-out infinite;
+    }
+
+    @keyframes bounceArrow {
+
+      0%,
+      100% {
+        transform: translateY(0);
+      }
+
+      50% {
+        transform: translateY(6px);
+      }
     }
 
     /* ══════════ SCENE 3 — FINALE (photo background + overlaid text) ══════════ */
@@ -784,6 +810,7 @@
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transform: scale(1.2);
       filter: grayscale(var(--finale-gray)) sepia(var(--finale-sepia)) brightness(0.9) contrast(1.03) saturate(1.05);
       animation: breathe 16s ease-in-out infinite alternate
     }
@@ -792,7 +819,7 @@
       content: "";
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(59, 6, 14, .72), rgba(59, 6, 14, .5) 45%, rgba(43, 4, 10, .82))
+      background: linear-gradient(180deg, rgba(0, 0, 0, .7), rgba(0, 0, 0, .5) 45%, rgba(0, 0, 0, .82));
     }
 
     .soon-inner {
@@ -1119,6 +1146,7 @@
         </div>
       </div>
       <p class="formal" id="formal">Formal invitation to follow.</p>
+      <div class="formal-arrow" id="formalArrow">&#x25BE;</div>
     </section>
 
     <!-- SCENE 3 -->
@@ -1303,6 +1331,13 @@
     });
     $('#backBtn').addEventListener('click', () => $('#top').scrollIntoView({ behavior: 'smooth' }));
 
+    /* Stop music when user navigates away, switches tabs, or closes the page */
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) music.pause();
+    });
+    window.addEventListener('beforeunload', () => music.pause());
+    window.addEventListener('pagehide', () => music.pause());
+
     /* typewriter + calm reveals */
     const married = $('#married'), full = "We are getting\nmarried!";
     let typed = false, marriedDone = false; const pending = [];
@@ -1322,7 +1357,23 @@
       io.unobserve(e.target);
     }), { threshold: .2 });
     io.observe(married);
-    document.querySelectorAll('.collage>div, #formal, #soonInner').forEach(el => io.observe(el));
+    document.querySelectorAll('.collage>div, #soonInner').forEach(el => io.observe(el));
+
+    /* Auto-show "formal invites" + arrow shortly after last collage item appears */
+    const formalEl = $('#formal'), arrowEl = $('#formalArrow');
+    const lastCollageItem = document.querySelector('.collage>div:last-child');
+    const formalIO = new IntersectionObserver(es => es.forEach(e => {
+      if (!e.isIntersecting) return;
+      formalIO.unobserve(e.target);
+      // Last collage item has --d:1.1s delay + 1.2s transition = ~2.3s total.
+      // Show formal text 1.6s after last item starts appearing.
+      const lastDelay = parseFloat(getComputedStyle(lastCollageItem).getPropertyValue('--d') || '1.1') * 1000;
+      setTimeout(() => {
+        formalEl.classList.add('in');
+        setTimeout(() => arrowEl.classList.add('in'), 600);
+      }, lastDelay + 1600);
+    }), { threshold: .15 });
+    if (lastCollageItem) formalIO.observe(lastCollageItem);
 
     /* countdown */
     const pad = n => String(n).padStart(2, '0');
