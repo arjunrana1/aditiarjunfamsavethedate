@@ -776,7 +776,7 @@
     }
 
     .formal {
-  margin-top: 20px;
+  margin-top: 8px;
   font-style: italic;
   font-size: var(--fs-formal);
   line-height: 1.7;
@@ -1416,6 +1416,23 @@
       }, lastDelay + 1600);
     }), { threshold: .15 });
     if (lastCollageItem) formalIO.observe(lastCollageItem);
+    /* Shrink the collage box so it ends exactly at the postcard's bottom edge.
+   This keeps "Formal invitation to follow." just 8px below the postcard
+   on every screen size (the postcard height varies with text wrapping). */
+const collageEl = $('#collage');
+const postcardEl = collageEl.querySelector('.postcard');
+function fitCollage() {
+  if (!collageEl || !postcardEl) return;
+  const w = postcardEl.offsetWidth, h = postcardEl.offsetHeight;
+  const deg = parseFloat(getComputedStyle(postcardEl).getPropertyValue('--r')) || 0;
+  const a = deg * Math.PI / 180;                       // account for the 3° tilt
+  const rotatedH = w * Math.sin(a) + h * Math.cos(a);  // visual height when tilted
+  collageEl.style.height = Math.ceil(postcardEl.offsetTop + (h + rotatedH) / 2) + 'px';
+}
+fitCollage();
+window.addEventListener('resize', fitCollage);
+window.addEventListener('load', fitCollage);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitCollage);
 
     /* countdown */
     const pad = n => String(n).padStart(2, '0');
